@@ -137,3 +137,45 @@
   }
 
 </%helpers:shorthand>
+
+<%helpers:shorthand name="place-content" sub_properties="align-content justify-content" extra_prefixes="webkit"
+                    spec="https://drafts.csswg.org/css-align/#propdef-place-content"
+                    products="none">
+    use properties::longhands::{align_content, justify_content};
+
+    pub fn parse_value(context: &ParserContext, input: &mut Parser) -> Result<Longhands, ()> {
+        let mut align = None;
+        let mut justify = None;
+        loop {
+            if align.is_none() {
+                if let Ok(value) = input.try(|input| align_content::parse(context, input)) {
+                    align = Some(value);
+                    continue
+                }
+            }
+            if justify.is_none() {
+                if let Ok(value) = input.try(|input| justify_content::parse(context, input)) {
+                    justify = Some(value);
+                    continue
+                }
+            }
+            break
+        }
+
+        if align.is_none() && justify.is_none() {
+            return Err(())
+        }
+        Ok(Longhands {
+            align_content: unwrap_or_initial!(align_content, align),
+            justify_content: unwrap_or_initial!(justify_content, justify),
+        })
+    }
+
+    impl<'a> ToCss for LonghandsToSerialize<'a> {
+        fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+            self.align_content.to_css(dest)?;
+            dest.write_str(" ")?;
+            self.justify_content.to_css(dest)
+        }
+    }
+</%helpers:shorthand>
